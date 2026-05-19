@@ -2,13 +2,19 @@ package com.voiceiq.iamservice.iam.entity;
 
 import com.voiceiq.iamservice.common.entity.BaseAuditEntity;
 import javax.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @Table(name = "users")
 @Getter
 @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class User extends BaseAuditEntity {
     
     @Column(name = "email", nullable = false, unique = true)

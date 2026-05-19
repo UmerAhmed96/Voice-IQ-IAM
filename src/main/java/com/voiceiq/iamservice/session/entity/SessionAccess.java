@@ -2,7 +2,10 @@ package com.voiceiq.iamservice.session.entity;
 
 import com.voiceiq.iamservice.common.entity.BaseAuditEntity;
 import javax.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
@@ -12,6 +15,9 @@ import java.util.UUID;
 @Table(name = "session_access")
 @Getter
 @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class SessionAccess extends BaseAuditEntity {
     
     @ManyToOne(fetch = FetchType.LAZY)

@@ -5,13 +5,19 @@ import com.voiceiq.iamservice.iam.entity.User;
 import com.voiceiq.iamservice.organization.entity.Organization;
 import com.voiceiq.iamservice.team.entity.Team;
 import javax.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @Table(name = "conversation_sessions")
 @Getter
 @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ConversationSession extends BaseAuditEntity {
     
     @ManyToOne(fetch = FetchType.LAZY)
