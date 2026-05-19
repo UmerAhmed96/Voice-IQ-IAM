@@ -33,4 +33,8 @@ public class BusinessException extends RuntimeException {
     public static BusinessException accessDenied(String message) {
         return new BusinessException(message, "ACCESS_DENIED", HttpStatus.FORBIDDEN);
     }
+    
+    public static BusinessException badRequest(String message) {
+        return new BusinessException(message, "VALIDATION_ERROR", HttpStatus.BAD_REQUEST);
+    }
 }

@@ -31,4 +31,12 @@ public class User extends BaseAuditEntity {
     
     @Column(name = "is_active")
     private Boolean isActive = true;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private UserStatus status = UserStatus.ACTIVE;
+    
+    public enum UserStatus {
+        ACTIVE, SUSPENDED, DISABLED
+    }
 }

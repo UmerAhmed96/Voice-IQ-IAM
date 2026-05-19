@@ -1,0 +1,16 @@
+package com.voiceiq.iamservice.iam.dto;
+
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
+import lombok.Data;
+
+@Data
+public class ChangePasswordRequest {
+    
+    @NotBlank(message = "Current password is required")
+    private String currentPassword;
+    
+    @NotBlank(message = "New password is required")
+    @Size(min = 8, message = "New password must be at least 8 characters")
+    private String newPassword;
+}

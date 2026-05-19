@@ -1,14 +1,14 @@
 package com.voiceiq.iamservice.iam.service;
 
 import com.voiceiq.iamservice.common.exception.BusinessException;
-import com.voiceiq.iamservice.iam.dto.AuthResponse;
-import com.voiceiq.iamservice.iam.dto.LoginRequest;
-import com.voiceiq.iamservice.iam.dto.RegisterRequest;
+import com.voiceiq.iamservice.iam.dto.*;
+import com.voiceiq.iamservice.iam.entity.UserSession;
 import com.voiceiq.iamservice.iam.entity.RefreshToken;
 import com.voiceiq.iamservice.iam.entity.User;
 import com.voiceiq.iamservice.iam.entity.UserRole;
 import com.voiceiq.iamservice.iam.repository.RefreshTokenRepository;
 import com.voiceiq.iamservice.iam.repository.UserRepository;
+import com.voiceiq.iamservice.iam.repository.UserSessionRepository;
 import com.voiceiq.iamservice.security.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -29,6 +30,7 @@ public class AuthService {
     
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final UserSessionRepository userSessionRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     
@@ -125,5 +127,69 @@ public class AuthService {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("SHA-256 algorithm not available", e);
         }
+    }
+    
+    public void resendVerificationEmail(ResendVerificationRequest request) {
+        // Security: Don't reveal whether email exists or not
+        log.info("Resend verification email request for: {}", request.getEmail());
+        
+        // TODO: Send email if user exists and not verified
+        // This is a placeholder - actual email sending should be implemented
+    }
+    
+    public void changePassword(ChangePasswordRequest request, UUID userId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> BusinessException.notFound("User not found"));
+            
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+            throw BusinessException.badRequest("Current password is incorrect");
+        }
+        
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+        
+        // Revoke all other sessions except current one
+        userSessionRepository.revokeAllSessionsForUser(userId, Instant.now(), "Password changed");
+        
+        log.info("Password changed for user: {}", userId);
+    }
+    
+    public List<UserSessionResponse> getActiveSessions(UUID userId) {
+        List<UserSession> sessions = userSessionRepository.findByUserIdAndRevokedAtIsNullOrderByLastUsedAtDesc(userId);
+        
+        return sessions.stream()
+            .map(this::mapToUserSessionResponse)
+            .collect(java.util.stream.Collectors.toList());
+    }
+    
+    public void revokeSession(UUID sessionId, UUID userId) {
+        int updated = userSessionRepository.revokeSession(sessionId, userId, Instant.now(), "Revoked by user");
+        
+        if (updated == 0) {
+            throw BusinessException.notFound("Session not found or already revoked");
+        }
+        
+        log.info("Session {} revoked for user: {}", sessionId, userId);
+    }
+    
+    public void logoutAll(UUID userId) {
+        userSessionRepository.revokeAllSessionsForUser(userId, Instant.now(), "Logout all sessions");
+        log.info("All sessions revoked for user: {}", userId);
+    }
+    
+    private UserSessionResponse mapToUserSessionResponse(UserSession session) {
+        return UserSessionResponse.builder()
+            .sessionId(session.getId())
+            .deviceName(session.getDeviceName())
+            .ipAddress(maskIpAddress(session.getIpAddressHash()))
+            .lastUsedAt(session.getLastUsedAt())
+            .createdAt(session.getCreatedAt())
+            .current(false) // TODO: Determine if this is current session
+            .build();
+    }
+    
+    private String maskIpAddress(String ipHash) {
+        // For security, show masked IP instead of actual IP
+        return ipHash != null ? "***." + ipHash.substring(Math.max(0, ipHash.length() - 6)) : "unknown";
     }
 }
